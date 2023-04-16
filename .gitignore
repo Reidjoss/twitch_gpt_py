@@ -2,3 +2,5 @@
 __pycache__
 test.py
 env
+src/backup gptpy.txt
+src/backup twitch_botpy.txt
