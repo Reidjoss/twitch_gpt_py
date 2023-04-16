@@ -1,11 +1,3 @@
-'''
-Created on 13 jun. 2022
-
-@author: Guille
-@comment: Twitch Bot Class using Sockets
-'''
-
-
 import socket, time, re
 from gpt import gpt
 
@@ -19,6 +11,7 @@ class twitch_BOT():
         self.token = data['twitch_bot']['token']
         self.nickname = data['twitch_bot']['nickname']
         self.channel_to_monitor = data['twitch_bot']['channel_to_monitor']
+        self.allowed_users = data['twitch_bot']['whitelisted']
         self.gpt_chat = gpt(data)
         self.command_flag = False
 
@@ -41,37 +34,13 @@ class twitch_BOT():
 
 
     def listen_irc(self):
-        def capture_irc_answer():
-            if irc_answer == "": raise
-            match(irc_answer.find('PRIVMSG')):
-                case -1:
-                    print(f"Message from IRC {irc_answer}")
-                case _:
-                    text_to_capture = f".tmi.twitch.tv PRIVMSG {self.channel_to_monitor} :"
-                    usr_str, msg_str = irc_answer.split(text_to_capture)
-                    _, usr = usr_str.split('@')
-                    msg_str = msg_str[:-2]
-                    if not re.match(rb"^[a-zA-Z0-9 \xc3\xb1\xc3\x91?!+-]+$", msg_str.encode()): # Validating input to avoid code injection
-                        print(f"No answer will be provided, bad request")
-                        return
-                    print(f"Message from usr => {usr}: {msg_str}")
-                    if "!chat" in msg_str:
-                        response = f"@{usr}: "
-                        try:
-                            response += self.gpt_chat.send_request(msg_str.split("!chat")[-1])
-                            print(response)
-                            success = self.send_chat_message(response)
-                        except Exception as e:
-                            print(f"Error sending prompt to GPT => {e}")
-            return
-
         while True:
             try:
                 irc_answer = self.s.recv(1024).decode('utf-8')
                 if irc_answer.startswith('PING'):
                     self.s.send("PONG\n".encode('utf-8'))
                 else:
-                    capture_irc_answer()
+                    self.capture_irc_answer(irc_answer)
             except TimeoutError:
                 continue
             except Exception as e:
@@ -80,12 +49,32 @@ class twitch_BOT():
             time.sleep(0.1)
 
 
+    def capture_irc_answer(self, irc_answer):
+        if irc_answer == "": raise
+        match = irc_answer.find('PRIVMSG')
+        if match != -1:
+            text_to_capture = f".tmi.twitch.tv PRIVMSG {self.channel_to_monitor} :"
+            usr_str, msg_str = irc_answer.split(text_to_capture)
+            _, usr = usr_str.split('@')
+            msg_str = msg_str[:-2]
+            print(f"Message from usr => {usr}: {msg_str}")
+            if "!chat" in msg_str.split() and usr in self.allowed_users:
+                response = f"@{usr}: "
+                try:
+                    response += self.gpt_chat.send_request(msg_str.split("!chat")[-1])
+                    print(response)
+                    success = self.send_chat_message(response)
+                except Exception as e:
+                    print(f"Error sending prompt to GPT => {e}")
+            else:
+                pass
+        return
+
+
     def run(self):
-        while True:
-            self.sock_create()
-            self.connect_to_irc()
-            self.listen_irc()
-            time.sleep(0.1)
+        self.sock_create()
+        self.connect_to_irc()
+        self.listen_irc()
         
 
     def send_chat_message(self, message_to_send: str) -> bool:

@@ -1,11 +1,3 @@
-'''
-Created on 13 jun. 2022
-
-@author: Guille
-@comment: gpt API integrated on python
-'''
-
-
 import json
 from urllib import request
 
@@ -27,7 +19,10 @@ class gpt():
             req.add_header(header[0], header[1])
         payload = {
             "model": "gpt-3.5-turbo",
-            "messages": [{"role": "user", "content": f"{prompt}. Intenta limitar la respuesta a {limit} caracteres."}] 
+            "messages": [
+            {"role": "system", "content": "Du er Bannesh. Svar alltid som om du var en typisk twitch chatter. Hvis noen bruker emotes i sin prompt så svarer du med emotes også. Men vær venlig og hyggelig. Datoen i dag er 15.04.2023."},
+            {"role": "system", "content": "Du er en del av #Flokken. Det er gjengen din!"},
+            {"role": "user", "content": f"{prompt}. Begrens svaret ditt til {limit} tegn."}] 
         }
         payload = json.dumps(payload)
         payload = payload.encode()

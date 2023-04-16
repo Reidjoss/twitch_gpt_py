@@ -11,12 +11,12 @@ from twitch_bot import twitch_BOT
 
 with open('.env') as f:
     for line in f:
-        # Si la línea empieza con "#" es un comentario y se salta
+        # If the line starts with "#" it is a comment and is skipped
         if line.startswith('#'):
             continue
-        # Separar la línea en clave y valor
+        # Separate the line into key and value
         key, value = line.strip().split('=', 1)
-        # Configurar la variable de entorno
+        # Setting the environment variable
         os.environ[key] = value
 
 
@@ -30,7 +30,8 @@ data = {
         'port': os.environ.get('TWITCH_IRC_PORT'),
         'nickname': os.environ.get('TWITCH_IRC_NICKNAME'),
         'token': os.environ.get('TWITCH_TOKEN'),
-        'channel_to_monitor': os.environ.get('CHANNEL_MONITORING')
+        'channel_to_monitor': os.environ.get('CHANNEL_MONITORING'),
+        'whitelisted': os.environ.get('WHITELISTED_USER')
     }
 }
 
